@@ -1,0 +1,167 @@
+// public/script.js
+
+// --- DOM要素取得 --- (変更なし)
+const storyElement = document.getElementById('story');
+const userInputElement = document.getElementById('userInput');
+const sendButton = document.getElementById('sendButton');
+const generatedImageElement = document.getElementById('generatedImage');
+const loadingIndicator = document.getElementById('loading-indicator');
+const messagesLogElement = document.getElementById('messages');
+
+// WebSocketサーバーに接続
+const socket = new WebSocket('ws://localhost:3000'); // アドレスを確認してください
+
+// --- WebSocketイベント処理 ---
+
+socket.onopen = (event) => {
+    console.log('WebSocket接続が開きました。');
+    addMessageToLog('サーバーに接続しました。', 'info');
+    enableInput();
+};
+
+socket.onmessage = (event) => {
+    console.log('サーバーからメッセージを受信:', event.data);
+    // ★ パース前に trim() を試す
+    const receivedData = typeof event.data === 'string' ? event.data.trim() : event.data;
+
+    // ★ 空のメッセージを除外
+    if (!receivedData) {
+        console.warn("サーバーから空のメッセージを受信しました。");
+        return; // 何もしない
+    }
+
+    try {
+        // ★ trim() したデータでパース試行
+        const data = JSON.parse(receivedData);
+
+        // メッセージタイプに応じて処理を分岐 (switch文は変更なし)
+        switch (data.type) {
+            case 'newMessage':
+                handleNewMessage(data.payload.reply);
+                break;
+            case 'newImage':
+                handleNewImage(data.payload.image);
+                break;
+            case 'info':
+                addMessageToLog(`情報: ${data.message}`, 'info');
+                break;
+            case 'error':
+                handleError(data.message);
+                break;
+            default:
+                // 既知のタイプ以外は整形してログに出力 (変更なし)
+                try {
+                    const formattedJson = JSON.stringify(data, null, 2);
+                    addMessageToLog(`サーバーから未対応タイプ (${data.type}):\n${formattedJson}`, 'warning');
+                    console.warn("未対応のメッセージタイプ:", data.type, data);
+                } catch (formatError) {
+                    addMessageToLog(`サーバーから未対応タイプ (${data.type}) のメッセージを受信しましたが、整形に失敗しました:\n${receivedData}`, 'warning');
+                    console.warn("未対応メッセージタイプの整形失敗:", data.type, receivedData, formatError);
+                }
+                break;
+        }
+    } catch (e) {
+        // ★ JSONパースに失敗した場合のログとUI表示を強化
+        console.error("JSONパースエラー発生:", e.message);
+        // 受信データの詳細をログに出力 (デバッグ用)
+        if (typeof receivedData === 'string') {
+             console.error(`受信データ (長さ: ${receivedData.length}): "${receivedData}"`);
+             // 先頭と末尾の文字コードを確認してみる (デバッグ用)
+             if (receivedData.length > 0) {
+                  console.error(`先頭文字コード: ${receivedData.charCodeAt(0)}`);
+                  console.error(`末尾文字コード: ${receivedData.charCodeAt(receivedData.length - 1)}`);
+             }
+        } else {
+             console.error("受信データ (文字列以外):", receivedData);
+        }
+        // UIへの表示メッセージを具体的に
+        addMessageToLog(`サーバーからのメッセージ解析エラー: ${e.message}\n--- 受信データ ---\n${receivedData}\n--- 受信データ終 ---`, 'error');
+    }
+};
+
+socket.onerror = (error) => {
+    console.error('WebSocketエラー:', error);
+    addMessageToLog('WebSocket接続でエラーが発生しました。接続状態を確認してください。', 'error');
+};
+
+socket.onclose = (event) => {
+    console.log(`WebSocket接続が閉じました。コード: ${event.code}, 理由: ${event.reason || '(理由なし)'}`, event);
+    let logMessage = `サーバーから切断されました。(コード: ${event.code}`;
+    if (!event.wasClean) {
+        logMessage += ' [予期せぬ切断]';
+    }
+    logMessage += ` 状態: ${getWebSocketState(socket.readyState)})`; // 閉じた後の状態も表示
+    if (event.reason) {
+        logMessage += ` 理由: ${event.reason}`;
+    }
+    addMessageToLog(logMessage, 'error');
+    disableInput();
+};
+
+// --- UIイベント処理 --- (変更なし)
+sendButton.addEventListener('click', sendMessageToServer);
+userInputElement.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !userInputElement.disabled) {
+        event.preventDefault();
+        sendMessageToServer();
+    }
+});
+
+// --- 関数定義 ---
+
+// (handleNewMessage, handleNewImage, handleError は変更なし)
+
+/** メッセージをサーバーに送信 */
+function sendMessageToServer() {
+    const message = userInputElement.value.trim();
+    if (!message) {
+        addMessageToLog("送信するメッセージを入力してください。", "info");
+        return;
+    }
+
+    // ★ 送信前の接続状態チェックを強化
+    if (socket.readyState === WebSocket.OPEN) {
+        const dataToSend = { type: 'userInput', payload: message };
+        try {
+            socket.send(JSON.stringify(dataToSend));
+            addMessageToLog(`あなた: ${message}`, 'user');
+            userInputElement.value = '';
+            disableInput();
+            showLoadingIndicator("AIの応答を待っています...");
+        } catch (sendError) {
+            console.error("WebSocketメッセージ送信エラー:", sendError);
+            // ★ 送信失敗時のエラーメッセージを改善
+            addMessageToLog(`メッセージの送信に失敗しました: ${sendError.message}`, "error");
+            // 接続状態もログに出力
+            addMessageToLog(`現在の接続状態: ${getWebSocketState(socket.readyState)}`, "info");
+            enableInput(); // 送信失敗したら入力可能に戻す
+        }
+    } else {
+        // ★ 接続が開いていない場合のメッセージを改善
+        addMessageToLog(`送信失敗: サーバーに接続されていません (状態: ${getWebSocketState(socket.readyState)})。`, 'error');
+        // 再接続を試みるなどの処理をここに追加可能
+    }
+}
+
+// (disableInput, enableInput, resetImageArea, showLoadingIndicator, hideLoadingIndicator, addMessageToLog, escapeHtml は変更なし)
+
+/** WebSocketのreadyStateを文字列に変換するヘルパー関数 */
+function getWebSocketState(readyState) {
+    switch (readyState) {
+        case WebSocket.CONNECTING: return '接続中 (0)';
+        case WebSocket.OPEN: return '接続済み (1)';
+        case WebSocket.CLOSING: return '切断中 (2)';
+        case WebSocket.CLOSED: return '切断済み (3)';
+        default: return `不明 (${readyState})`;
+    }
+}
+
+// --- 初期化処理 --- (変更なし)
+storyElement.textContent = "テキストアドベンチャーへようこそ！\n最初の行動を入力して「送信」を押してください。(例: 始める)";
+addMessageToLog("クライアント初期化完了、サーバー接続待ち...", 'info');
+disableInput();
+hideLoadingIndicator();
+resetImageArea();
+
+// --- 推奨CSSスタイル --- (変更なし)
+// ... (前回のコード例を参照)

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphAI テキストアドベンチャー (基本)</title>
+    <style>
+        body { font-family: sans-serif; }
+        #chatArea { margin-bottom: 10px; }
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap; /* 改行を反映 */
+        }
+        #imageArea {
+             border: 1px dashed #ccc;
+             min-height: 100px;
+             padding: 10px;
+             text-align: center;
+             margin-bottom: 10px;
+        }
+        #imageArea img { max-width: 100%; max-height: 200px; display: none; }
+        #inputArea { display: flex; }
+        #userInput { flex-grow: 1; margin-right: 5px; padding: 8px; }
+        #sendButton { padding: 8px 15px; }
+    #messages {
+        height: 300px; /* 例: 高さを指定 */
+        overflow-y: auto; /* スクロール可能に */
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        white-space: pre-wrap; /* 改行とスペースを保持し、折り返す */
+        background-color: #f9f9f9;
+    }
+    #story {
+         white-space: pre-wrap; /* ストーリー表示エリアも改行対応 */
+         min-height: 5em; /* 例: 最低限の高さを確保 */
+         border: 1px solid #eee;
+         padding: 10px;
+         background-color: #fff;
+    }
+    .log-message {
+        margin-bottom: 8px;
+        padding: 4px 6px;
+        border-radius: 4px;
+    }
+    .log-info {
+        color: #555;
+        font-style: italic;
+    }
+    .log-error {
+        color: #d9534f; /* 赤系 */
+        background-color: #f2dede;
+        border: 1px solid #ebccd1;
+        font-weight: bold;
+    }
+    .log-warning {
+        color: #8a6d3b; /* オレンジ/茶系 */
+        background-color: #fcf8e3;
+        border: 1px solid #faebcc;
+    }
+    .log-warning pre { /* 整形JSON用 */
+        margin: 5px 0 0 0;
+        padding: 8px;
+        background-color: #eee;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: monospace; /* 等幅フォント */
+        font-size: 0.9em;
+    }
+    .log-ai {
+        background-color: #e7f3fe; /* 水色系 */
+        border-left: 3px solid #60a5fa;
+    }
+    .log-user {
+        background-color: #e8f5e9; /* 緑系 */
+        border-right: 3px solid #66bb6a;
+        text-align: right; /* ユーザーメッセージを右寄せにする場合 */
+    }
+    .log-user strong { /* ユーザー名の太字 */
+         display: inline-block; /* 必要なら */
+         margin-right: 5px;
+    }
+    #loading-indicator {
+        text-align: center;
+        padding: 10px;
+        color: gray;
+    }
+    #generatedImage {
+        max-width: 100%;
+        height: auto;
+        margin-top: 10px;
+        display: block; /* 中央揃えのためなど */
+        margin-left: auto;
+        margin-right: auto;
+    }
+</style>    
+</head>
+<body>
+    <h1>GraphAI テキストアドベンチャー (基本)</h1>
+
+<div id="story"></div>
+
+<div>
+    <input type="text" id="userInput" placeholder="行動を入力...">
+    <button id="sendButton">送信</button>
+</div>
+
+<div id="image-display">
+    <div id="loading-indicator" style="display: none;">処理中...</div>
+    <img id="generatedImage" src="" alt="Generated Image" style="display: none; max-width: 100%;">
+</div>
+
+
+<div id="messages" style="height: 150px; overflow-y: scroll; border: 1px solid #eee; padding: 5px; font-size: 0.8em; margin-top: 20px;">
+    </div>
+
+
+    <div id="user-message-area" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+    </div>
+
+<script src="script.js"></script>
+
+<!--     
+    <div id="chatArea">
+        <div id="messages">サーバーからのメッセージをここに表示します...</div>
+    </div>
+
+    <div id="imageArea">
+        <p>(画像はここに表示されます)</p>
+        <img id="generatedImage" src="" alt="生成画像">
+    </div>
+
+    <div id="inputArea">
+        <input type="text" id="userInput" placeholder="メッセージを入力...">
+        <button id="sendButton">送信</button>
+    </div>
+
+    <script src="script.js"></script> </body> -->
+</html>

@@ -11,7 +11,7 @@
     "doc": "yarn workspaces run doc",
     "monoRepoAgentDoc": "npx tsx src/monoRepoAgentDocs.ts",
     "markdown": "npx tsx src/markdown.ts",
-    "sample": "npx ts-node docs/async/sample1.ts"
+    "sample": "npx tsx docs/async/sample1.ts .\\samples\\llm\\gpt4o.ts .\\samples\\llm\\gpt4o.ts"
   },
   "private": true,
   "devDependencies": {
@@ -40,6 +40,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.5.0",
+    "openai": "^4.96.2",
+    "ws": "^8.18.1",
     "yaml": "^2.7.1"
   }
 }

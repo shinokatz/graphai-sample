@@ -21,37 +21,38 @@ const imagePath = path.join(__dirname, "fish001.jpg");
 const base64Image = convertImageToBase64(imagePath);
 // console.log(base64Image);
 
-const query = "これはなんと言う魚ですか？";
+//const query = "これはなんと言う魚ですか？";
+const query ="テキストアドベンチャーを初めてください";
 
 const graph_data = {
   version: 0.5,
   nodes: {
-    messages: {
-      value: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: query,
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/png;base64,${base64Image}`,
-              },
-            },
-          ],
-        },
-      ],
-    },
+    // messages: {
+    //   value: [
+    //     {
+    //       role: "user",
+    //       content: [
+    //         {
+    //           type: "text",
+    //           text: query,
+    //         },
+    //         {
+    //           type: "image_url",
+    //           image_url: {
+    //             url: `data:image/png;base64,${base64Image}`,
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   ],
+    // },
     query: {
       agent: "openAIAgent",
       params: {
         model: "gpt-4o",
       },
       isResult: true,
-      inputs: { messages: ":messages" },
+      inputs: { prompt: query }, // ★ { messages: ":messages" } から変更
     },
     answer: {
       agent: "copyAgent",
